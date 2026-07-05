@@ -398,6 +398,12 @@ EOD;
                     'sender' => 'patel',
                     'content' => $responseText
                 ];
+            } else {
+                $errorMessage = "Sorry, I encountered an error communicating with Gemini API: " . ($response->json()['error']['message'] ?? $response->body());
+                $aiResponse = [
+                    'sender' => 'patel',
+                    'content' => $errorMessage
+                ];
             }
         } catch (\Exception $e) {
             $aiResponse = [
