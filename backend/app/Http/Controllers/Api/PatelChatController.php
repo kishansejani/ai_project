@@ -208,7 +208,7 @@ Keep your answers professional, direct, clear, and optimize for 0-cost, lightwei
 
         // Call Gemini API
         try {
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
                 'contents' => $contents,
