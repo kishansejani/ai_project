@@ -276,7 +276,10 @@ EOD;
                         $jsonContent = trim($jsonContent);
                     }
                     
-                    $actions = json_decode($jsonContent, true);
+                    // Escape single backslashes that are not valid JSON escape sequences (e.g., PHP namespaces like \D, \M)
+                    $jsonContentCleaned = preg_replace('/\\\(?!["\\\\\/bfnrt]|u[0-9a-fA-F]{4})/', '\\\\', $jsonContent);
+                    
+                    $actions = json_decode($jsonContentCleaned, true);
                     if (is_array($actions)) {
                         // Find project path
                         $projectPath = null;
@@ -317,7 +320,7 @@ EOD;
                             $executedLogs[] = "⚠️ Could not execute actions: Project path not found or invalid.";
                         }
                     } else {
-                        $executedLogs[] = "⚠️ Could not parse actions: Invalid JSON format.";
+                        $executedLogs[] = "⚠️ Could not parse actions: Invalid JSON format (" . json_last_error_msg() . ").";
                     }
                 }
 
