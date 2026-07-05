@@ -244,7 +244,7 @@ EOD;
 
         // Call Gemini API
         try {
-            $response = Http::withoutVerifying()->withHeaders([
+            $response = Http::timeout(90)->withoutVerifying()->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
                 'contents' => $contents,
