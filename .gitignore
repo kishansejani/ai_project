@@ -1,0 +1,28 @@
+# Root GitIgnore
+composer.phar
+
+# Backend ignores
+/backend/.env
+/backend/vendor
+/backend/storage/*.json
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+
+# Frontend ignores
+/frontend/node_modules
+/frontend/dist
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/pnpm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
