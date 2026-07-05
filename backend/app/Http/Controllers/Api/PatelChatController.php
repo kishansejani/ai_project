@@ -148,7 +148,41 @@ class PatelChatController extends Controller
         $systemPrompt = "You are 'Patel', a developer assistant for Developer OS. Your job is to help users manage, analyze, and build features in their software projects.
 You explain controllers, models, routes, and migrations.
 When the user asks for database sequence diagrams or user flows, generate beautiful Mermaid diagram code blocks (using ```mermaid).
-Keep your answers professional, direct, clear, and optimize for 0-cost, lightweight web structures.";
+Keep your answers professional, direct, clear, and optimize for 0-cost, lightweight web structures.
+
+ADDITIONAL AGENT CAPABILITIES:
+You can directly implement code changes and run commands on the user's project!
+If the user asks you to implement a feature, add fields, write code, run migrations, or install packages, you MUST include a JSON block enclosed in <execute_actions> and </execute_actions> tags.
+The JSON must be an array of objects, where each object represents an action to perform:
+- To write/create/modify a file:
+  {
+    "action": "write_file",
+    "path": "relative/path/to/file.php",
+    "content": "full code content of the file"
+  }
+- To run an artisan or composer/npm command:
+  {
+    "action": "run_command",
+    "command": "php artisan migrate" (or any other command like 'php artisan make:model', 'composer require', etc.)
+  }
+
+For example:
+Let's add a status field to the products table.
+<execute_actions>
+[
+  {
+    "action": "write_file",
+    "path": "database/migrations/2026_07_05_000000_add_status_to_products_table.php",
+    "content": "..."
+  },
+  {
+    "action": "run_command",
+    "command": "php artisan migrate"
+  }
+]
+</execute_actions>
+
+Always output the code files fully. Do not use place holders. Always keep paths relative to the project root.";
 
         if (!empty($projectContext)) {
             $systemPrompt .= "\n\nHere is the scanned context of the user's current project:";
@@ -226,6 +260,68 @@ Keep your answers professional, direct, clear, and optimize for 0-cost, lightwei
             } else {
                 $candidates = $response->json('candidates');
                 $responseText = $candidates[0]['content']['parts'][0]['text'] ?? "I received an empty response. Please try again.";
+                
+                // Parse and execute actions if present in $responseText
+                $executedLogs = [];
+                if (preg_match('/<execute_actions>(.*?)<\/execute_actions>/s', $responseText, $matches)) {
+                    $jsonContent = trim($matches[1]);
+                    // Strip markdown block formatting if present
+                    if (str_starts_with($jsonContent, '```json')) {
+                        $jsonContent = preg_replace('/^```json|```$/', '', $jsonContent);
+                        $jsonContent = trim($jsonContent);
+                    } else if (str_starts_with($jsonContent, '```')) {
+                        $jsonContent = preg_replace('/^```|```$/', '', $jsonContent);
+                        $jsonContent = trim($jsonContent);
+                    }
+                    
+                    $actions = json_decode($jsonContent, true);
+                    if (is_array($actions)) {
+                        // Find project path
+                        $projectPath = null;
+                        if (!$this->useFallback()) {
+                            $conversation = Conversation::find($conversationId);
+                            if ($conversation) {
+                                $project = Project::find($conversation->project_id);
+                                if ($project) {
+                                    $projectPath = $project->path;
+                                }
+                            }
+                        } else {
+                            if (!empty($projectContext) && !empty($projectContext['project_path'])) {
+                                $projectPath = $projectContext['project_path'];
+                            }
+                        }
+
+                        if ($projectPath && is_dir($projectPath)) {
+                            foreach ($actions as $action) {
+                                if (isset($action['action'])) {
+                                    if ($action['action'] === 'write_file' && isset($action['path']) && isset($action['content'])) {
+                                        $filePath = rtrim($projectPath, '/\\') . '/' . ltrim($action['path'], '/\\');
+                                        $dir = dirname($filePath);
+                                        if (!is_dir($dir)) {
+                                            mkdir($dir, 0755, true);
+                                        }
+                                        file_put_contents($filePath, $action['content']);
+                                        $executedLogs[] = "✅ Written file: `{$action['path']}`";
+                                    } elseif ($action['action'] === 'run_command' && isset($action['command'])) {
+                                        // Run the command in the project directory using shell_exec
+                                        $cmd = 'cd /d ' . escapeshellarg($projectPath) . ' && ' . $action['command'] . ' 2>&1';
+                                        $output = shell_exec($cmd);
+                                        $executedLogs[] = "💻 Executed command: `{$action['command']}`\n\n```\n" . trim($output) . "\n```";
+                                    }
+                                }
+                            }
+                        } else {
+                            $executedLogs[] = "⚠️ Could not execute actions: Project path not found or invalid.";
+                        }
+                    } else {
+                        $executedLogs[] = "⚠️ Could not parse actions: Invalid JSON format.";
+                    }
+                }
+
+                if (!empty($executedLogs)) {
+                    $responseText .= "\n\n### ⚙️ Patel Agent Actions Executed:\n" . implode("\n", $executedLogs);
+                }
                 
                 // Save Patel Response
                 $savedPatelMsg = [
