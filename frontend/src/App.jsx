@@ -129,7 +129,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/projects`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ name: newProjName, path: newProjPath })
       });
 
@@ -170,7 +173,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/projects/analyze`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ project_id: id })
       });
       if (res.ok) {
@@ -190,7 +196,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/projects/file-content`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ path: absolutePath })
       });
       if (res.ok) {
@@ -239,7 +248,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/conversations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ title, project_id: selectedProjectId })
       });
       if (res.ok) {
@@ -265,7 +277,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           message: messageText,
           conversation_id: activeConvId,
@@ -341,7 +356,10 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/generate-crud`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           project_id: selectedProjectId,
           model_name: genModelName,
