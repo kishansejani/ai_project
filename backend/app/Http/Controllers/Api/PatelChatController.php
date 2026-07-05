@@ -359,6 +359,19 @@ EOD;
                     } else {
                         $executedLogs[] = "⚠️ Could not parse actions: Invalid JSON format (" . json_last_error_msg() . ").";
                     }
+                    
+                    // Replace the raw <execute_actions>...</execute_actions> block in the response with clean Markdown
+                    $markdownRepresentation = [];
+                    foreach ($actions as $action) {
+                        if ($action['action'] === 'write_file') {
+                            $markdownRepresentation[] = "📂 **File to Write:** `{$action['path']}`\n```php\n" . $action['content'] . "\n```";
+                        } elseif ($action['action'] === 'run_command') {
+                            $markdownRepresentation[] = "💻 **Command to Run:** `{$action['command']}`";
+                        }
+                    }
+                    if (!empty($markdownRepresentation)) {
+                        $responseText = str_replace($matches[0], implode("\n\n", $markdownRepresentation), $responseText);
+                    }
                 }
 
                 if (!empty($executedLogs)) {
