@@ -35,7 +35,7 @@ class CodeGeneratorController extends Controller
     public function generateCrud(Request $request)
     {
         $request->validate([
-            'project_id' => 'required|string',
+            'project_id' => 'required',
             'model_name' => 'required|string', // e.g. "Product"
             'fields' => 'required|array', // e.g. [["name" => "title", "type" => "string"], ...]
         ]);

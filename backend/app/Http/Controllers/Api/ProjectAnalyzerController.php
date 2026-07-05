@@ -45,7 +45,7 @@ class ProjectAnalyzerController extends Controller
     public function analyze(Request $request)
     {
         $request->validate([
-            'project_id' => 'required|string',
+            'project_id' => 'required',
         ]);
 
         $project = $this->getProjectInfo($request->project_id);

@@ -73,7 +73,7 @@ class PatelChatController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
-            'project_id' => 'required|string',
+            'project_id' => 'required',
         ]);
 
         if ($this->useFallback()) {
@@ -111,7 +111,7 @@ class PatelChatController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'conversation_id' => 'required|string',
+            'conversation_id' => 'required',
             'project_context' => 'nullable|array', // Contains routes, controllers, models, stack info
             'current_file' => 'nullable|array', // Contains path and content
         ]);
