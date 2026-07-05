@@ -309,8 +309,13 @@ EOD;
                                         file_put_contents($filePath, $action['content']);
                                         $executedLogs[] = "✅ Written file: `{$action['path']}`";
                                     } elseif ($action['action'] === 'run_command' && isset($action['command'])) {
+                                        $command = $action['command'];
+                                        // Auto-replace php command with local XAMPP php.exe path
+                                        if (str_starts_with($command, 'php ')) {
+                                            $command = 'c:\xampp\php\php.exe ' . substr($command, 4);
+                                        }
                                         // Run the command in the project directory using shell_exec
-                                        $cmd = 'cd /d ' . escapeshellarg($projectPath) . ' && ' . $action['command'] . ' 2>&1';
+                                        $cmd = 'cd /d ' . escapeshellarg($projectPath) . ' && ' . $command . ' 2>&1';
                                         $output = shell_exec($cmd);
                                         $executedLogs[] = "💻 Executed command: `{$action['command']}`\n\n```\n" . trim($output) . "\n```";
                                     }
