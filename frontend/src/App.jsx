@@ -68,7 +68,6 @@ export default function App() {
     if (selectedProjectId) {
       const proj = projects.find(p => p.id == selectedProjectId);
       setCurrentProject(proj);
-      // Auto analyze when project changes
       analyzeProject(selectedProjectId);
       fetchConversations(selectedProjectId);
     } else {
@@ -151,7 +150,7 @@ export default function App() {
 
   const deleteProject = async (id, e) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to remove this project from Developer OS?')) return;
+    if (!confirm('Are you sure you want to remove this project?')) return;
     try {
       const res = await fetch(`${API_BASE}/projects/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -205,7 +204,6 @@ export default function App() {
     }
   };
 
-  // Chat APIs
   const fetchConversations = async (projId) => {
     try {
       const res = await fetch(`${API_BASE}/conversations?project_id=${projId}`);
@@ -262,7 +260,6 @@ export default function App() {
     setChatInput('');
     setChatLoading(true);
 
-    // Optimistic Update
     setMessages(prev => [...prev, { sender: 'user', content: messageText }]);
 
     try {
@@ -299,7 +296,6 @@ export default function App() {
     }
   };
 
-  // Code Generator methods
   const addGenField = () => {
     setGenFields([...genFields, { name: '', type: 'string', nullable: false }]);
   };
@@ -357,7 +353,6 @@ export default function App() {
         setGenResult(data);
         setGenModelName('');
         setGenFields([{ name: '', type: 'string', nullable: false }]);
-        // Re-analyze project so new files show up
         analyzeProject(selectedProjectId);
       } else {
         setGenError(data.message || 'Failed to generate CRUD');
@@ -369,7 +364,6 @@ export default function App() {
     }
   };
 
-  // Render Folder Tree Component
   const FileTreeNode = ({ item }) => {
     const [expanded, setExpanded] = useState(false);
     const isDir = item.type === 'directory';
@@ -378,27 +372,33 @@ export default function App() {
       if (isDir) {
         setExpanded(!expanded);
       } else {
-        // Fetch absolute path
         const absolutePath = analysis.project_path + '/' + item.relative_path;
         fetchFileContent(absolutePath);
       }
     };
 
     return (
-      <div className="pl-3 font-mono text-sm">
+      <div style={{ paddingLeft: '12px', fontFamily: 'monospace', fontSize: '13px' }}>
         <div 
           onClick={handleClick}
-          className={`flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer select-none transition-colors ${isDir ? 'hover:bg-white/5' : 'hover:bg-indigo-500/10 text-slate-300'}`}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px', 
+            padding: '4px 8px', 
+            borderRadius: '6px', 
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+            color: isDir ? '#f59e0b' : '#94a3b8'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
-          {isDir ? (
-            <Folder size={15} className="text-yellow-500 fill-yellow-500/15" />
-          ) : (
-            <FileText size={15} className="text-indigo-400" />
-          )}
+          {isDir ? <Folder size={14} /> : <FileText size={14} />}
           <span>{item.name}</span>
         </div>
         {isDir && expanded && item.children && (
-          <div className="border-l border-white/5 ml-3">
+          <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.05)', marginLeft: '8px' }}>
             {item.children.map((child, i) => (
               <FileTreeNode key={i} item={child} />
             ))}
@@ -409,86 +409,85 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden text-slate-200">
+    <div className="app-layout">
       
       {/* SIDEBAR */}
-      <div className="w-64 glass-panel border-r border-white/5 flex flex-col justify-between m-3 mr-0">
+      <div className="sidebar">
         <div>
-          {/* Logo */}
-          <div className="p-5 flex items-center gap-3 border-b border-white/5">
-            <div className="p-2 bg-gradient-to-tr from-indigo-500 to-cyan-400 rounded-xl bg-glow">
-              <Cpu className="text-white" size={20} />
+          {/* Logo Section */}
+          <div className="logo-section">
+            <div className="logo-badge">
+              <Cpu size={22} />
             </div>
             <div>
-              <h1 className="font-bold text-lg tracking-wide text-white">Developer OS</h1>
-              <span className="text-xs text-indigo-400 font-medium">Assistant: Patel</span>
+              <h1 className="logo-title">Developer OS</h1>
+              <span className="logo-subtitle">Assistant: Patel</span>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
+          <nav className="nav-list">
             <button 
               onClick={() => setActiveTab('projects')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-lg bg-glow' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}`}
+              className={`nav-item ${activeTab === 'projects' ? 'active' : ''}`}
             >
-              <FolderGit2 size={18} />
+              <FolderGit2 size={16} />
               <span>Project Manager</span>
             </button>
 
             <button 
               onClick={() => setActiveTab('analyzer')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'analyzer' ? 'bg-indigo-600 text-white shadow-lg bg-glow' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}`}
+              className={`nav-item ${activeTab === 'analyzer' ? 'active' : ''}`}
             >
-              <Compass size={18} />
+              <Compass size={16} />
               <span>Project Analyzer</span>
             </button>
 
             <button 
               onClick={() => setActiveTab('chat')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'chat' ? 'bg-indigo-600 text-white shadow-lg bg-glow' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}`}
+              className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
             >
-              <Bot size={18} />
+              <Bot size={16} />
               <span>Patel Chat</span>
             </button>
 
             <button 
               onClick={() => setActiveTab('generator')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'generator' ? 'bg-indigo-600 text-white shadow-lg bg-glow' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}`}
+              className={`nav-item ${activeTab === 'generator' ? 'active' : ''}`}
             >
-              <Wand2 size={18} />
+              <Wand2 size={16} />
               <span>Code Generator</span>
             </button>
           </nav>
         </div>
 
         {/* Status Indicators */}
-        <div className="p-4 border-t border-white/5 space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">Backend Server</span>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${backendOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className={backendOnline ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                {backendOnline ? 'Online' : 'Offline'}
-              </span>
-            </div>
+        <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <div className="status-badge" style={{ marginBottom: '8px' }}>
+            <span style={{ color: '#94a3b8' }}>Backend Server</span>
+            <span style={{ color: backendOnline ? '#10b981' : '#ef4444' }}>
+              <span className={`status-dot ${backendOnline ? 'online' : 'offline'}`} />
+              {backendOnline ? 'Online' : 'Offline'}
+            </span>
           </div>
-          <div className="text-[10px] text-slate-400 text-center">
+          <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'center' }}>
             Local Dev OS @ Port 8000
           </div>
         </div>
       </div>
 
       {/* MAIN CONTAINER */}
-      <div className="flex-1 flex flex-col overflow-hidden m-3">
+      <div className="main-container">
         
-        {/* TOP NAVBAR / HEADER */}
-        <header className="h-16 glass-panel border-b border-white/5 flex items-center justify-between px-6 mb-3">
-          <div className="flex items-center gap-4">
-            <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">Active Project:</span>
+        {/* HEADER */}
+        <header className="header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 600 }}>Active Project:</span>
             <select 
               value={selectedProjectId} 
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-sm font-medium text-white focus:outline-none focus:border-indigo-500"
+              className="glass-input"
+              style={{ padding: '6px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}
             >
               <option value="">-- Select or Import Project --</option>
               {projects.map((p) => (
@@ -497,103 +496,102 @@ export default function App() {
             </select>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div>
             {currentProject && (
-              <span className="text-xs text-indigo-400 font-mono bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20">
+              <span className="font-mono" style={{ fontSize: '0.75rem', color: '#818cf8', background: 'rgba(99, 102, 241, 0.1)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                 {currentProject.path}
               </span>
             )}
           </div>
         </header>
 
-        {/* CONTENT CONTAINER */}
-        <main className="flex-1 overflow-y-auto min-h-0">
+        {/* CONTENT PANELS */}
+        <main className="content-pane">
           
-          {/* TAB: PROJECT MANAGER */}
+          {/* TAB: PROJECTS */}
           {activeTab === 'projects' && (
-            <div className="space-y-6">
-              <div className="glass-panel p-6">
-                <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                  <FolderPlus className="text-indigo-400" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="glass-panel">
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 8px 0' }}>
+                  <FolderPlus style={{ color: '#818cf8' }} size={20} />
                   Import / Register Local Project
                 </h2>
-                <p className="text-sm text-slate-400 mb-6">
-                  Import any Laravel or React folder located on your system. Developer OS will read directories and hook up our AI assistant Patel to explain and customize it.
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 20px 0' }}>
+                  Import any Laravel or React folder located on your local drive. Developer OS will read directories and hook up our AI assistant Patel.
                 </p>
 
-                <form onSubmit={importProject} className="space-y-4 max-w-xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-slate-400 font-semibold">Project Name</label>
+                <form onSubmit={importProject} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Project Name</label>
                       <input 
                         type="text" 
-                        placeholder="e.g. My E-commerce Web"
+                        placeholder="e.g. Laravel App"
                         value={newProjName}
                         onChange={(e) => setNewProjName(e.target.value)}
                         className="glass-input"
                       />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-slate-400 font-semibold">Absolute Local Folder Path</label>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Absolute Local Path</label>
                       <input 
                         type="text" 
-                        placeholder="e.g. c:/xampp/htdocs/other_project"
+                        placeholder="e.g. c:/xampp/htdocs/app"
                         value={newProjPath}
                         onChange={(e) => setNewProjPath(e.target.value)}
-                        className="glass-input font-mono text-sm"
+                        className="glass-input font-mono"
                       />
                     </div>
                   </div>
 
                   {projError && (
-                    <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem' }}>
                       <AlertCircle size={16} />
                       <span>{projError}</span>
                     </div>
                   )}
 
                   {projSuccess && (
-                    <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', color: '#34d399', fontSize: '0.85rem' }}>
                       <CheckCircle2 size={16} />
                       <span>{projSuccess}</span>
                     </div>
                   )}
 
-                  <button 
-                    type="submit" 
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-indigo-500/25"
-                  >
+                  <button type="submit" className="btn btn-primary" style={{ width: 'fit-content' }}>
                     Import Project
                   </button>
                 </form>
               </div>
 
               {/* Projects List */}
-              <div className="glass-panel p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Your Projects</h3>
+              <div className="glass-panel">
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 16px 0' }}>Your Registered Workspaces</h3>
                 {projects.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500 text-sm">
-                    No projects imported yet. Use the form above to register your first local workspace directory.
+                  <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748b', fontSize: '0.9rem' }}>
+                    No projects registered yet. Use the form above to import your local workspace directory.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="card-grid">
                     {projects.map((p) => (
                       <div 
                         key={p.id}
                         onClick={() => setSelectedProjectId(p.id)}
-                        className={`p-4 glass-card cursor-pointer border ${selectedProjectId == p.id ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-white/5'}`}
+                        className="glass-card"
+                        style={{ borderColor: selectedProjectId == p.id ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.04)', background: selectedProjectId == p.id ? 'rgba(99,102,241,0.04)' : '' }}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-bold text-white">{p.name}</h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <h4 style={{ margin: 0, fontWeight: 700, color: 'white' }}>{p.name}</h4>
                           <button 
                             onClick={(e) => deleteProject(p.id, e)}
-                            className="p-1 text-slate-500 hover:text-red-400 rounded transition-colors"
+                            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
-                        <p className="text-xs font-mono text-slate-400 truncate mb-1">{p.path}</p>
-                        <span className="text-[10px] text-slate-500">Registered: {new Date(p.created_at || Date.now()).toLocaleDateString()}</span>
+                        <p className="font-mono text-glow" style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 8px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.path}</p>
                       </div>
                     ))}
                   </div>
@@ -604,85 +602,84 @@ export default function App() {
 
           {/* TAB: PROJECT ANALYZER */}
           {activeTab === 'analyzer' && (
-            <div className="h-full flex flex-col">
+            <div style={{ height: '100%' }}>
               {!selectedProjectId ? (
-                <div className="glass-panel p-8 text-center text-slate-400">
+                <div className="glass-panel" style={{ textAlign: 'center', color: '#94a3b8' }}>
                   Please select a project in the top header selector to analyze its directories.
                 </div>
               ) : loadingAnalysis ? (
-                <div className="glass-panel p-12 text-center text-slate-400">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-4" />
-                  Analyzing directory structures, controllers, models, and routes...
+                <div className="glass-panel" style={{ textAlign: 'center', color: '#94a3b8' }}>
+                  <div style={{ border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #6366f1', borderRadius: '50%', width: '24px', height: '24px', animation: 'spin 1s linear infinite', margin: '0 auto 16px auto' }} />
+                  Analyzing directory structure...
                 </div>
               ) : !analysis ? (
-                <div className="glass-panel p-8 text-center text-slate-400">
-                  Failed to load project details. Verify if the directory still exists.
+                <div className="glass-panel" style={{ textAlign: 'center', color: '#94a3b8' }}>
+                  Failed to load project details. Verify if directory still exists.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[500px]">
+                <div className="analyzer-grid">
                   
-                  {/* File Tree (Col 4) */}
-                  <div className="lg:col-span-3 glass-panel p-4 flex flex-col overflow-hidden">
-                    <h3 className="text-sm uppercase tracking-wider font-semibold text-slate-400 mb-3 flex items-center gap-2">
-                      <Folder size={15} />
+                  {/* File Explorer */}
+                  <div className="file-explorer">
+                    <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Folder size={14} />
                       File Explorer
                     </h3>
-                    <div className="flex-1 overflow-y-auto space-y-1">
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
                       {analysis.file_tree.map((item, idx) => (
                         <FileTreeNode key={idx} item={item} />
                       ))}
                     </div>
                   </div>
 
-                  {/* Analyzer Details & Code Preview (Col 9) */}
-                  <div className="lg:col-span-9 flex flex-col gap-4">
+                  {/* Right Details Panel */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden' }}>
                     
-                    {/* Project Highlights / Dashboard stats */}
-                    <div className="glass-panel p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* Stat Metrics */}
+                    <div className="glass-panel" style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                       <div>
-                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Stack</span>
-                        <span className="text-sm font-semibold text-white">{analysis.stack.join(' + ')}</span>
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', display: 'block' }}>Stack</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>{analysis.stack.join(' + ')}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Controllers</span>
-                        <span className="text-sm font-semibold text-white">{analysis.controllers.length}</span>
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', display: 'block' }}>Controllers</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>{analysis.controllers.length}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Models</span>
-                        <span className="text-sm font-semibold text-white">{analysis.models.length}</span>
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', display: 'block' }}>Models</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>{analysis.models.length}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Routes</span>
-                        <span className="text-sm font-semibold text-white">{analysis.routes.length}</span>
+                        <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', display: 'block' }}>Routes</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white' }}>{analysis.routes.length}</span>
                       </div>
                     </div>
 
-                    {/* File Content Preview */}
-                    <div className="glass-panel p-4 flex-1 flex flex-col overflow-hidden min-h-[350px]">
-                      <h3 className="text-sm uppercase tracking-wider font-semibold text-slate-400 mb-3 flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <Code size={15} />
-                          File Preview
-                        </span>
+                    {/* Code Preview */}
+                    <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.85rem', textTransform: 'uppercase', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Code size={14} />
+                          Code Preview
+                        </h4>
                         {openFile && (
-                          <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                          <span className="font-mono" style={{ fontSize: '0.7rem', color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                             {basename(openFile.path)}
                           </span>
                         )}
-                      </h3>
+                      </div>
 
-                      <div className="flex-1 overflow-y-auto bg-black/30 border border-white/5 rounded-lg p-4 font-mono text-xs text-slate-300">
+                      <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '16px', fontFamily: 'monospace', fontSize: '12px', color: '#cbd5e1' }}>
                         {fileLoading ? (
-                          <div className="text-center py-12 text-slate-500">Loading file content...</div>
+                          <div style={{ textAlign: 'center', color: '#64748b', padding: '24px' }}>Loading file content...</div>
                         ) : openFile ? (
-                          <pre className="whitespace-pre-wrap">{openFile.content}</pre>
+                          <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{openFile.content}</pre>
                         ) : (
-                          <div className="text-center py-12 text-slate-500">
-                            Select a file from the explorer to view its code content.
-                          </div>
+                          <div style={{ textAlign: 'center', color: '#64748b', padding: '24px' }}>Select a file from the explorer to preview code.</div>
                         )}
                       </div>
                     </div>
+
                   </div>
 
                 </div>
@@ -692,77 +689,77 @@ export default function App() {
 
           {/* TAB: PATEL CHAT */}
           {activeTab === 'chat' && (
-            <div className="h-full flex gap-4 min-h-[500px]">
+            <div className="chat-layout">
               
-              {/* Chats List sidebar */}
-              <div className="w-56 glass-panel p-4 flex flex-col justify-between overflow-hidden">
+              {/* Sidebar list */}
+              <div className="glass-panel" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden' }}>
                 <div>
                   <button 
-                    onClick={createNewChat}
-                    className="w-full flex items-center justify-center gap-2 py-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-sm font-medium transition-all mb-4"
+                    onClick={createNewChat} 
+                    className="btn btn-primary"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
                   >
-                    <Plus size={16} />
-                    New Conversation
+                    <Plus size={14} />
+                    New Chat
                   </button>
-
-                  <h3 className="text-xs uppercase tracking-wider font-semibold text-slate-500 mb-2">Previous Chats</h3>
-                  <div className="space-y-1 overflow-y-auto max-h-[350px]">
+                </div>
+                <div style={{ overflowY: 'auto', flex: 1 }}>
+                  <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: '#64748b', display: 'block', marginBottom: '8px', fontWeight: 600 }}>Sessions</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {conversations.map((c) => (
                       <button 
-                        key={c.id}
+                        key={c.id} 
                         onClick={() => setActiveConvId(c.id)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors ${activeConvId == c.id ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/20' : 'hover:bg-white/5 text-slate-400'}`}
+                        style={{ 
+                          width: '100%', 
+                          textAlign: 'left', 
+                          padding: '8px 12px', 
+                          border: 'none', 
+                          borderRadius: '8px', 
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          background: activeConvId == c.id ? 'rgba(99,102,241,0.15)' : 'transparent',
+                          color: activeConvId == c.id ? '#818cf8' : '#94a3b8'
+                        }}
                       >
                         {c.title}
                       </button>
                     ))}
-                    {conversations.length === 0 && (
-                      <div className="text-xs text-slate-600 text-center py-4">No chat sessions.</div>
-                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Chat View */}
-              <div className="flex-1 glass-panel flex flex-col justify-between overflow-hidden">
-                {/* Chat header */}
-                <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between bg-black/10">
-                  <div className="flex items-center gap-2">
-                    <Bot className="text-indigo-400" />
-                    <div>
-                      <h3 className="font-bold text-white text-sm">Patel AI</h3>
-                      <span className="text-[10px] text-green-400">Ready to assist</span>
-                    </div>
+              {/* Chat Main Window */}
+              <div className="chat-window">
+                <div className="chat-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Bot size={18} style={{ color: '#818cf8' }} />
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Patel AI</span>
                   </div>
                   {openFile && (
-                    <span className="text-xs text-slate-400 font-mono max-w-[200px] truncate">
-                      Context: {basename(openFile.path)}
-                    </span>
+                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Active File: {basename(openFile.path)}</span>
                   )}
                 </div>
 
-                {/* Messages Box */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {/* Messages */}
+                <div className="messages-list">
                   {messages.map((msg, i) => (
-                    <div 
-                      key={i} 
-                      className={`flex gap-3 max-w-[85%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
-                    >
-                      <div className={`p-2 h-8 w-8 rounded-full flex items-center justify-center text-white ${msg.sender === 'user' ? 'bg-indigo-600' : 'bg-slate-700'}`}>
-                        {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
+                    <div key={i} className={`message-bubble ${msg.sender === 'user' ? 'user' : 'patel'}`}>
+                      <div className={`avatar ${msg.sender === 'user' ? 'user' : 'patel'}`}>
+                        {msg.sender === 'user' ? <User size={14} /> : <Bot size={14} />}
                       </div>
-                      <div className={`rounded-2xl p-4 text-sm ${msg.sender === 'user' ? 'bg-indigo-600/90 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 rounded-tl-none'}`}>
-                        <pre className="whitespace-pre-wrap font-sans leading-relaxed">{msg.content}</pre>
+                      <div className="bubble-content">
+                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{msg.content}</pre>
                       </div>
                     </div>
                   ))}
                   {chatLoading && (
-                    <div className="flex gap-3 mr-auto items-center">
-                      <div className="p-2 h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center">
-                        <Bot size={16} />
+                    <div className="message-bubble patel">
+                      <div className="avatar patel">
+                        <Bot size={14} />
                       </div>
-                      <div className="bg-white/5 border border-white/5 rounded-2xl rounded-tl-none p-3 text-xs text-slate-400 animate-pulse">
-                        Patel is generating a response...
+                      <div className="bubble-content" style={{ color: '#64748b', fontStyle: 'italic' }}>
+                        Patel is typing...
                       </div>
                     </div>
                   )}
@@ -770,21 +767,18 @@ export default function App() {
                 </div>
 
                 {/* Input box */}
-                <form onSubmit={sendChatMessage} className="p-4 border-t border-white/5 bg-black/10 flex gap-2">
+                <form onSubmit={sendChatMessage} className="chat-input-bar">
                   <input 
-                    type="text"
-                    disabled={!activeConvId}
-                    placeholder={activeConvId ? "Ask Patel to explain authentication, check endpoints, or write code..." : "Select or create a conversation to start"}
+                    type="text" 
+                    placeholder="Ask Patel to explain codebase, controllers, or generate migrations..." 
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    className="flex-1 glass-input py-2.5 px-4"
+                    disabled={!activeConvId}
+                    className="glass-input"
+                    style={{ flex: 1 }}
                   />
-                  <button 
-                    type="submit"
-                    disabled={!activeConvId || chatLoading}
-                    className="p-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Send size={18} />
+                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }} disabled={!activeConvId || chatLoading}>
+                    <Send size={14} />
                   </button>
                 </form>
               </div>
@@ -794,21 +788,21 @@ export default function App() {
 
           {/* TAB: CODE GENERATOR */}
           {activeTab === 'generator' && (
-            <div className="space-y-6">
-              <div className="glass-panel p-6">
-                <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                  <Wand2 className="text-indigo-400" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="glass-panel">
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 8px 0' }}>
+                  <Wand2 style={{ color: '#818cf8' }} size={20} />
                   AI CRUD Generator
                 </h2>
-                <p className="text-sm text-slate-400 mb-6">
-                  Input a database model (e.g. <code>Product</code>) and fields. The generator will create migrations, models, API controllers, and append resource routes to <code>routes/api.php</code> directly inside your project structure.
+                <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 20px 0' }}>
+                  Quickly generate database migration schemas, fillable models, API resource controllers, and register their web/API routes instantly.
                 </p>
 
-                <form onSubmit={handleGenerateCrud} className="space-y-6">
-                  <div className="flex flex-col gap-1.5 max-w-sm">
-                    <label className="text-xs text-slate-400 font-semibold">Model Name (Singular)</label>
+                <form onSubmit={handleGenerateCrud} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="form-group" style={{ maxWidth: '300px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Model Name (Singular)</label>
                     <input 
-                      type="text"
+                      type="text" 
                       placeholder="e.g. Order"
                       value={genModelName}
                       onChange={(e) => setGenModelName(e.target.value)}
@@ -816,110 +810,101 @@ export default function App() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs text-slate-400 font-semibold block">Model Fields</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Model Fields</label>
                     
-                    {genFields.map((field, index) => (
-                      <div key={index} className="flex items-center gap-3">
+                    {genFields.map((field, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <input 
-                          type="text"
-                          placeholder="Field Name (e.g. quantity)"
+                          type="text" 
+                          placeholder="Field name (e.g. title)"
                           value={field.name}
-                          onChange={(e) => handleGenFieldChange(index, 'name', e.target.value)}
-                          className="glass-input text-sm flex-1 max-w-[200px]"
+                          onChange={(e) => handleGenFieldChange(idx, 'name', e.target.value)}
+                          className="glass-input"
+                          style={{ maxWidth: '180px' }}
                         />
 
-                        <select
-                          value={field.type}
-                          onChange={(e) => handleGenFieldChange(index, 'type', e.target.value)}
-                          className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                        <select 
+                          value={field.type} 
+                          onChange={(e) => handleGenFieldChange(idx, 'type', e.target.value)}
+                          className="glass-input"
+                          style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}
                         >
                           <option value="string">String (varchar)</option>
                           <option value="integer">Integer (int)</option>
                           <option value="text">Text (longtext)</option>
-                          <option value="boolean">Boolean (tinyint)</option>
+                          <option value="boolean">Boolean</option>
                           <option value="double">Double / Decimal</option>
                           <option value="date">Date</option>
                         </select>
 
-                        <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+                        <label style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#94a3b8' }}>
                           <input 
                             type="checkbox"
                             checked={field.nullable}
-                            onChange={(e) => handleGenFieldChange(index, 'nullable', e.target.checked)}
-                            className="rounded border-white/10 text-indigo-600 focus:ring-indigo-500"
+                            onChange={(e) => handleGenFieldChange(idx, 'nullable', e.target.checked)}
                           />
                           Nullable
                         </label>
 
                         {genFields.length > 1 && (
                           <button 
-                            type="button"
-                            onClick={() => removeGenField(index)}
-                            className="p-2 text-slate-500 hover:text-red-400 rounded transition-colors"
+                            type="button" 
+                            onClick={() => removeGenField(idx)}
+                            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         )}
                       </div>
                     ))}
 
-                    <button
-                      type="button"
+                    <button 
+                      type="button" 
                       onClick={addGenField}
-                      className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-medium py-1.5 px-2.5 rounded hover:bg-indigo-500/5 transition-colors mt-2"
+                      style={{ background: 'transparent', border: 'none', color: '#818cf8', fontWeight: 600, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '6px 0', width: 'fit-content' }}
                     >
-                      <Plus size={14} />
-                      Add Field
+                      <Plus size={14} /> Add Field
                     </button>
                   </div>
 
                   {genError && (
-                    <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm max-w-xl">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: '#f87171', fontSize: '0.85rem', maxWidth: '500px' }}>
                       <AlertCircle size={16} />
                       <span>{genError}</span>
                     </div>
                   )}
 
-                  <button
-                    type="submit"
-                    disabled={genLoading || !selectedProjectId}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
-                  >
-                    {genLoading ? 'Generating CRUD files...' : 'Generate CRUD'}
+                  <button type="submit" className="btn btn-primary" style={{ width: 'fit-content' }} disabled={genLoading || !selectedProjectId}>
+                    {genLoading ? 'Generating CRUD...' : 'Generate CRUD'}
                   </button>
                 </form>
               </div>
 
-              {/* Generation Result Output */}
+              {/* Generation results */}
               {genResult && (
-                <div className="glass-panel p-6 space-y-4">
-                  <div className="flex items-center gap-2 text-green-400 font-semibold">
-                    <CheckCircle2 size={18} />
-                    <span>CRUD components successfully generated!</span>
+                <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ color: '#34d399', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CheckCircle2 size={16} />
+                    <span>CRUD successfully generated!</span>
                   </div>
-                  
-                  <div className="space-y-3 font-mono text-xs text-slate-400">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.75rem', color: '#94a3b8' }}>
                     <div>
-                      <span className="text-white font-semibold">1. Migration created:</span>
-                      <div className="bg-black/20 p-2 rounded border border-white/5 mt-1 overflow-x-auto">
-                        {genResult.files.migration.path}
-                      </div>
+                      <strong style={{ color: 'white' }}>Migration: </strong>
+                      <span className="font-mono">{genResult.files.migration.path}</span>
                     </div>
                     <div>
-                      <span className="text-white font-semibold">2. Model created:</span>
-                      <div className="bg-black/20 p-2 rounded border border-white/5 mt-1 overflow-x-auto">
-                        {genResult.files.model.path}
-                      </div>
+                      <strong style={{ color: 'white' }}>Model: </strong>
+                      <span className="font-mono">{genResult.files.model.path}</span>
                     </div>
                     <div>
-                      <span className="text-white font-semibold">3. Controller created:</span>
-                      <div className="bg-black/20 p-2 rounded border border-white/5 mt-1 overflow-x-auto">
-                        {genResult.files.controller.path}
-                      </div>
+                      <strong style={{ color: 'white' }}>Controller: </strong>
+                      <span className="font-mono">{genResult.files.controller.path}</span>
                     </div>
                     {genResult.route_added && (
-                      <div className="text-indigo-400">
+                      <div style={{ color: '#818cf8', fontWeight: 600 }}>
                         ✓ Registered API Resource route in routes/api.php
                       </div>
                     )}
