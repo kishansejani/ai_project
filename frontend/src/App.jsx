@@ -59,6 +59,20 @@ export default function App() {
   // Backend Health Checks
   const [backendOnline, setBackendOnline] = useState(false);
 
+  // UI Theme Settings State
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [accentColor, setAccentColor] = useState(localStorage.getItem('accentColor') || 'purple');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-accent', accentColor);
+    localStorage.setItem('accentColor', accentColor);
+  }, [accentColor]);
+
   useEffect(() => {
     checkBackendHealth();
     fetchProjects();
@@ -480,8 +494,51 @@ export default function App() {
           </nav>
         </div>
 
+        {/* Theme Changer Settings Panel */}
+        <div className="theme-settings-module">
+          <h4>Dashboard Theme</h4>
+          <div className="theme-options">
+            <button 
+              onClick={() => setTheme('dark')} 
+              className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
+            >
+              Dark
+            </button>
+            <button 
+              onClick={() => setTheme('light')} 
+              className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
+            >
+              Light
+            </button>
+          </div>
+          
+          <h4>Accent Color</h4>
+          <div className="color-options">
+            <span 
+              onClick={() => setAccentColor('purple')} 
+              className={`color-dot purple ${accentColor === 'purple' ? 'active' : ''}`}
+              title="Purple"
+            />
+            <span 
+              onClick={() => setAccentColor('blue')} 
+              className={`color-dot blue ${accentColor === 'blue' ? 'active' : ''}`}
+              title="Blue"
+            />
+            <span 
+              onClick={() => setAccentColor('green')} 
+              className={`color-dot green ${accentColor === 'green' ? 'active' : ''}`}
+              title="Green"
+            />
+            <span 
+              onClick={() => setAccentColor('red')} 
+              className={`color-dot red ${accentColor === 'red' ? 'active' : ''}`}
+              title="Red"
+            />
+          </div>
+        </div>
+
         {/* Status Indicators */}
-        <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ paddingTop: '16px', borderTop: '1px solid var(--panel-border)', marginTop: '12px' }}>
           <div className="status-badge" style={{ marginBottom: '8px' }}>
             <span style={{ color: '#94a3b8' }}>Backend Server</span>
             <span style={{ color: backendOnline ? '#10b981' : '#ef4444' }}>
