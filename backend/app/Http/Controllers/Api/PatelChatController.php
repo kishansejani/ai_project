@@ -268,7 +268,7 @@ EOD;
                         $actions = [];
                         
                         // Extract write_file actions using robust JSON string regex
-                        preg_match_all('/"action"\s*:\s*"write_file"\s*,\s*"path"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*,\s*"content"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/s', $jsonContent, $fileMatches, PREG_SET_ORDER);
+                        preg_match_all('/"action"\s*:\s*"write_file"\s*,\s*"path"\s*:\s*"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"\s*,\s*"content"\s*:\s*"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"/s', $jsonContent, $fileMatches, PREG_SET_ORDER);
                         foreach ($fileMatches as $fm) {
                             $actions[] = [
                                 'action' => 'write_file',
@@ -278,7 +278,7 @@ EOD;
                         }
                         
                         // Extract run_command actions
-                        preg_match_all('/"action"\s*:\s*"run_command"\s*,\s*"command"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/s', $jsonContent, $cmdMatches, PREG_SET_ORDER);
+                        preg_match_all('/"action"\s*:\s*"run_command"\s*,\s*"command"\s*:\s*"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"/s', $jsonContent, $cmdMatches, PREG_SET_ORDER);
                         foreach ($cmdMatches as $cm) {
                             $actions[] = [
                                 'action' => 'run_command',
