@@ -144,8 +144,8 @@ class PatelChatController extends Controller
         // Format history for Gemini API
         $contents = [];
         
-        // Inject system instructions and project context as a developer system prompt
-        $systemPrompt = "You are 'Patel', a developer assistant for Developer OS. Your job is to help users manage, analyze, and build features in their software projects.
+        $systemPrompt = <<<EOD
+You are 'Patel', a developer assistant for Developer OS. Your job is to help users manage, analyze, and build features in their software projects.
 You explain controllers, models, routes, and migrations.
 When the user asks for database sequence diagrams or user flows, generate beautiful Mermaid diagram code blocks (using ```mermaid).
 Keep your answers professional, direct, clear, and optimize for 0-cost, lightweight web structures.
@@ -182,7 +182,8 @@ Let's add a status field to the products table.
 ]
 </execute_actions>
 
-Always output the code files fully. Do not use place holders. Always keep paths relative to the project root.";
+Always output the code files fully. Do not use place holders. Always keep paths relative to the project root.
+EOD;
 
         if (!empty($projectContext)) {
             $systemPrompt .= "\n\nHere is the scanned context of the user's current project:";
