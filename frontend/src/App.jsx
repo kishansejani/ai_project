@@ -290,7 +290,8 @@ export default function App() {
         setMessages(prev => [...prev, { sender: 'patel', content: '❌ Error: Failed to generate response.' }]);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { sender: 'patel', content: '❌ Error: Connection to backend failed.' }]);
+      console.error("Chat error:", e);
+      setMessages(prev => [...prev, { sender: 'patel', content: `❌ Error: ${e.message || 'Connection to backend failed.'}` }]);
     } finally {
       setChatLoading(false);
     }
