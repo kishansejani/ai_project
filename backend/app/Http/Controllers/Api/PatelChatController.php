@@ -151,6 +151,11 @@ You explain controllers, models, routes, and migrations.
 When the user asks for database sequence diagrams or user flows, generate beautiful Mermaid diagram code blocks (using ```mermaid).
 Keep your answers professional, direct, clear, and optimize for 0-cost, lightweight web structures.
 
+PROJECT DIRECTORY STRUCTURE / MULTI-MODULE WORKSPACE GUIDELINES:
+- The user's active workspace may contain separate 'backend' (Laravel) and 'frontend' (React + Vite) directories.
+- If the user asks you to implement or change something in their UI, you MUST edit or write the React code directly inside the 'frontend/' folder (typically 'frontend/src/App.jsx', 'frontend/src/index.css', etc.). Do NOT write standalone HTML files unless requested!
+- If the user asks you to implement database or server features, write Laravel code inside the 'backend/' folder (typically 'backend/app/...', 'backend/database/migrations/...', etc.).
+
 ADDITIONAL AGENT CAPABILITIES:
 You can directly implement code changes and run commands on the user's project!
 If the user asks you to implement a feature, add fields, write code, run migrations, or install packages, you MUST include a JSON block enclosed in <execute_actions> and </execute_actions> tags.
@@ -158,32 +163,16 @@ The JSON must be an array of objects, where each object represents an action to 
 - To write/create/modify a file:
   {
     "action": "write_file",
-    "path": "relative/path/to/file.php",
+    "path": "relative/path/to/file.php", (e.g., "backend/database/migrations/..." or "frontend/src/App.jsx")
     "content": "full code content of the file"
   }
 - To run an artisan or composer/npm command:
   {
     "action": "run_command",
-    "command": "php artisan migrate" (or any other command like 'php artisan make:model', 'composer require', etc.)
+    "command": "php artisan migrate" (or "npm run dev", "npm install ...", etc.)
   }
 
-For example:
-Let's add a status field to the products table.
-<execute_actions>
-[
-  {
-    "action": "write_file",
-    "path": "database/migrations/2026_07_05_000000_add_status_to_products_table.php",
-    "content": "..."
-  },
-  {
-    "action": "run_command",
-    "command": "php artisan migrate"
-  }
-]
-</execute_actions>
-
-Always output the code files fully. Do not use place holders. Always keep paths relative to the project root.
+Always output the code files fully. Do not use placeholders. Always keep paths relative to the project root.
 EOD;
 
         if (!empty($projectContext)) {
@@ -253,15 +242,9 @@ EOD;
                 ]
             ]);
 
-            if ($response->failed()) {
-                $errorMessage = "Sorry, I encountered an error communicating with Gemini API: " . ($response->json()['error']['message'] ?? $response->body());
-                $aiResponse = [
-                    'sender' => 'patel',
-                    'content' => $errorMessage
-                ];
-            } else {
-                $candidates = $response->json('candidates');
-                $responseText = $candidates[0]['content']['parts'][0]['text'] ?? "I received an empty response. Please try again.";
+            if ($response->successful()) {
+                $resData = $response->json();
+                $responseText = $resData['candidates'][0]['content']['parts'][0]['text'] ?? 'No response content.';
                 
                 // Parse and execute actions if present in $responseText
                 $executedLogs = [];
@@ -285,8 +268,6 @@ EOD;
                         $actions = [];
                         
                         // Extract write_file actions using robust JSON string regex
-                        // Pattern: matches "action": "write_file", then matches "path": "...", then matches "content": "..."
-                        // Since there might be random whitespace or keys, we do a flexible match on "write_file" blocks
                         preg_match_all('/"action"\s*:\s*"write_file"\s*,\s*"path"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*,\s*"content"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/s', $jsonContent, $fileMatches, PREG_SET_ORDER);
                         foreach ($fileMatches as $fm) {
                             $actions[] = [
@@ -324,16 +305,20 @@ EOD;
                         }
 
                         if ($projectPath && is_dir($projectPath)) {
-                            // Auto-correct project path if user selected the workspace root which contains 'backend' folder
-                            $realProjectPath = $projectPath;
-                            if (is_dir(rtrim($projectPath, '/\\') . '/backend') && !is_file(rtrim($projectPath, '/\\') . '/artisan')) {
-                                $realProjectPath = rtrim($projectPath, '/\\') . '/backend';
-                            }
-
                             foreach ($actions as $action) {
                                 if (isset($action['action'])) {
                                     if ($action['action'] === 'write_file' && isset($action['path']) && isset($action['content'])) {
-                                        $filePath = rtrim($realProjectPath, '/\\') . '/' . ltrim($action['path'], '/\\');
+                                        $actionPath = ltrim($action['path'], '/\\');
+                                        
+                                        // If the workspace has a backend folder and the path doesn't start with backend/ or frontend/
+                                        if (is_dir(rtrim($projectPath, '/\\') . '/backend') && 
+                                            !str_starts_with($actionPath, 'backend/') && 
+                                            !str_starts_with($actionPath, 'frontend/')) {
+                                            $filePath = rtrim($projectPath, '/\\') . '/backend/' . $actionPath;
+                                        } else {
+                                            $filePath = rtrim($projectPath, '/\\') . '/' . $actionPath;
+                                        }
+
                                         $dir = dirname($filePath);
                                         if (!is_dir($dir)) {
                                             mkdir($dir, 0755, true);
@@ -346,8 +331,19 @@ EOD;
                                         if (str_starts_with($command, 'php ')) {
                                             $command = 'c:\xampp\php\php.exe ' . substr($command, 4);
                                         }
-                                        // Run the command in the corrected project directory using shell_exec
-                                        $cmd = 'cd /d ' . escapeshellarg($realProjectPath) . ' && ' . $command . ' 2>&1';
+                                        
+                                        // Determine directory to run the command in
+                                        $execDir = $projectPath;
+                                        if (is_dir(rtrim($projectPath, '/\\') . '/backend') && 
+                                            (str_contains($command, 'artisan') || str_contains($command, 'composer') || str_starts_with($command, 'c:\\xampp\\php\\php.exe'))) {
+                                            $execDir = rtrim($projectPath, '/\\') . '/backend';
+                                        } elseif (is_dir(rtrim($projectPath, '/\\') . '/frontend') && 
+                                            (str_contains($command, 'npm ') || str_contains($command, 'vite'))) {
+                                            $execDir = rtrim($projectPath, '/\\') . '/frontend';
+                                        }
+
+                                        // Run the command in the corrected directory using shell_exec
+                                        $cmd = 'cd /d ' . escapeshellarg($execDir) . ' && ' . $command . ' 2>&1';
                                         $output = shell_exec($cmd);
                                         $executedLogs[] = "💻 Executed command: `{$action['command']}`\n\n```\n" . trim($output) . "\n```";
                                     }

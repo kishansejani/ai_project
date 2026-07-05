@@ -62,11 +62,13 @@ class ProjectAnalyzerController extends Controller
 
         // 1. Detect Stack
         $stack = [];
-        if (file_exists($path . '/composer.json')) {
+        $composerPath = file_exists($path . '/composer.json') ? $path . '/composer.json' : (file_exists($path . '/backend/composer.json') ? $path . '/backend/composer.json' : null);
+        if ($composerPath) {
             $stack[] = 'Laravel/PHP';
         }
-        if (file_exists($path . '/package.json')) {
-            $packageJson = json_decode(file_get_contents($path . '/package.json'), true);
+        $packagePath = file_exists($path . '/package.json') ? $path . '/package.json' : (file_exists($path . '/frontend/package.json') ? $path . '/frontend/package.json' : null);
+        if ($packagePath) {
+            $packageJson = json_decode(file_get_contents($packagePath), true);
             if (isset($packageJson['dependencies']['react']) || isset($packageJson['devDependencies']['react'])) {
                 $stack[] = 'React';
             } elseif (isset($packageJson['dependencies']['vue']) || isset($packageJson['devDependencies']['vue'])) {
