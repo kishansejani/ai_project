@@ -280,7 +280,39 @@ EOD;
                     $jsonContentCleaned = preg_replace('/\\\(?!["\\\\\/bfnrt]|u[0-9a-fA-F]{4})/', '\\\\', $jsonContent);
                     
                     $actions = json_decode($jsonContentCleaned, true);
-                    if (is_array($actions)) {
+                    if (!is_array($actions)) {
+                        // Fallback: parse using regex if JSON decoding fails due to escaping/newline/comment issues
+                        $actions = [];
+                        
+                        // Match individual object blocks {...}
+                        preg_match_all('/\{[^{}]+\}/s', $jsonContent, $objects);
+                        if (isset($objects[0])) {
+                            foreach ($objects[0] as $obj) {
+                                $actionVal = preg_match('/"action"\s*:\s*"([^"]+)"/', $obj, $m) ? $m[1] : null;
+                                if ($actionVal === 'write_file') {
+                                    $pathVal = preg_match('/"path"\s*:\s*"([^"]+)"/', $obj, $m) ? $m[1] : null;
+                                    $contentVal = preg_match('/"content"\s*:\s*"(.*?)"/s', $obj, $m) ? $m[1] : null;
+                                    if ($pathVal && $contentVal) {
+                                        $actions[] = [
+                                            'action' => 'write_file',
+                                            'path' => $pathVal,
+                                            'content' => stripcslashes($contentVal)
+                                        ];
+                                    }
+                                } elseif ($actionVal === 'run_command') {
+                                    $commandVal = preg_match('/"command"\s*:\s*"([^"]+)"/', $obj, $m) ? $m[1] : null;
+                                    if ($commandVal) {
+                                        $actions[] = [
+                                            'action' => 'run_command',
+                                            'command' => $commandVal
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (is_array($actions) && count($actions) > 0) {
                         // Find project path
                         $projectPath = null;
                         if (!$this->useFallback()) {
