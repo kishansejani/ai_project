@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Project;
 
 class PatelChatController extends Controller
 {
