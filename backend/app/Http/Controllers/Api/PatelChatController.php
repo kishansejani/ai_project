@@ -284,31 +284,25 @@ EOD;
                         // Fallback: parse using regex if JSON decoding fails due to escaping/newline/comment issues
                         $actions = [];
                         
-                        // Match individual object blocks {...}
-                        preg_match_all('/\{[^{}]+\}/s', $jsonContent, $objects);
-                        if (isset($objects[0])) {
-                            foreach ($objects[0] as $obj) {
-                                $actionVal = preg_match('/"action"\s*:\s*"([^"]+)"/', $obj, $m) ? $m[1] : null;
-                                if ($actionVal === 'write_file') {
-                                    $pathVal = preg_match('/"path"\s*:\s*"([^"]+)"/', $obj, $m) ? $m[1] : null;
-                                    $contentVal = preg_match('/"content"\s*:\s*"(.*?)"/s', $obj, $m) ? $m[1] : null;
-                                    if ($pathVal && $contentVal) {
-                                        $actions[] = [
-                                            'action' => 'write_file',
-                                            'path' => $pathVal,
-                                            'content' => stripcslashes($contentVal)
-                                        ];
-                                    }
-                                } elseif ($actionVal === 'run_command') {
-                                    $commandVal = preg_match('/"command"\s*:\s*"([^"]+)"/', $obj, $m) ? $m[1] : null;
-                                    if ($commandVal) {
-                                        $actions[] = [
-                                            'action' => 'run_command',
-                                            'command' => $commandVal
-                                        ];
-                                    }
-                                }
-                            }
+                        // Extract write_file actions using robust JSON string regex
+                        // Pattern: matches "action": "write_file", then matches "path": "...", then matches "content": "..."
+                        // Since there might be random whitespace or keys, we do a flexible match on "write_file" blocks
+                        preg_match_all('/"action"\s*:\s*"write_file"\s*,\s*"path"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*,\s*"content"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/s', $jsonContent, $fileMatches, PREG_SET_ORDER);
+                        foreach ($fileMatches as $fm) {
+                            $actions[] = [
+                                'action' => 'write_file',
+                                'path' => stripcslashes($fm[1]),
+                                'content' => stripcslashes($fm[2])
+                            ];
+                        }
+                        
+                        // Extract run_command actions
+                        preg_match_all('/"action"\s*:\s*"run_command"\s*,\s*"command"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/s', $jsonContent, $cmdMatches, PREG_SET_ORDER);
+                        foreach ($cmdMatches as $cm) {
+                            $actions[] = [
+                                'action' => 'run_command',
+                                'command' => stripcslashes($cm[1])
+                            ];
                         }
                     }
                     
@@ -330,10 +324,16 @@ EOD;
                         }
 
                         if ($projectPath && is_dir($projectPath)) {
+                            // Auto-correct project path if user selected the workspace root which contains 'backend' folder
+                            $realProjectPath = $projectPath;
+                            if (is_dir(rtrim($projectPath, '/\\') . '/backend') && !is_file(rtrim($projectPath, '/\\') . '/artisan')) {
+                                $realProjectPath = rtrim($projectPath, '/\\') . '/backend';
+                            }
+
                             foreach ($actions as $action) {
                                 if (isset($action['action'])) {
                                     if ($action['action'] === 'write_file' && isset($action['path']) && isset($action['content'])) {
-                                        $filePath = rtrim($projectPath, '/\\') . '/' . ltrim($action['path'], '/\\');
+                                        $filePath = rtrim($realProjectPath, '/\\') . '/' . ltrim($action['path'], '/\\');
                                         $dir = dirname($filePath);
                                         if (!is_dir($dir)) {
                                             mkdir($dir, 0755, true);
@@ -346,8 +346,8 @@ EOD;
                                         if (str_starts_with($command, 'php ')) {
                                             $command = 'c:\xampp\php\php.exe ' . substr($command, 4);
                                         }
-                                        // Run the command in the project directory using shell_exec
-                                        $cmd = 'cd /d ' . escapeshellarg($projectPath) . ' && ' . $command . ' 2>&1';
+                                        // Run the command in the corrected project directory using shell_exec
+                                        $cmd = 'cd /d ' . escapeshellarg($realProjectPath) . ' && ' . $command . ' 2>&1';
                                         $output = shell_exec($cmd);
                                         $executedLogs[] = "💻 Executed command: `{$action['command']}`\n\n```\n" . trim($output) . "\n```";
                                     }
